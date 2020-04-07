@@ -37,12 +37,61 @@ router.get('/:id', (req, res) => {
 
 // GET array of comments for post with specified ID
 // /api/posts/:id/comments
+// post not found: status 404, { message: "error message" }
+// error retrieving comments: cancel, status 500, { error: "error message" }
+// success: status 200, return array of comment objects
+router.get('/:id/comments', (req, res) => {
+    Posts.findById(req.params.id)
+    .then(post => {
+        if (!post) {
+            res.status(404).json({ message: "Post not found." });
+        } else {
+            Posts.findPostComments(req.params.id)
+            .then( comments => {
+                if (!comments) {
+                    res.status(404).json({ message: "No comments on specified post." });
+                } else {
+                    res.status(200).json(comments);
+                }
+            })
+            .catch( err => {
+                res.status(500).json({ error: `Error retrieving comments: ${err}`});
+            })
+        }
+    })
+    .catch(err => {
+        res.status(500).json({ error: `Error retrieving post: ${err}`});
+    })
+})
 
 // POST new post with info in request body
 // /api/posts
 // missing title or contents: cancel request, status 400, return { errorMessage: "Title and contents both required." }
 // valid info: save new post to DB, return status 201, return new post (not request body)
 // error while saving: cancel request, status 500, return { error: "message here" }
+router.post('/', (req, res) => {
+    if (!req.body.title || !req.body.contents) {
+        res.status(400).json({ errorMessage: "Title and contents are both required." });
+    } else {
+        Posts.insert(req.body)
+        .then(postId => {
+            Posts.findById(postId.id)
+            .then( resp => {
+                if (resp){
+                    res.status(201).json(resp);
+                } else {
+                    res.status(500).json({ error: "Error retrieving new post."});
+                }
+            })
+            .catch( err => {
+                res.status(500).json({ error: "Error sending request for new post."});
+            })
+        })
+        .catch(err => {
+            res.status(500).json({ error: "Error saving new post." });
+        })
+    }
+})
 
 // POST new comment for post with specified ID
 // /api/posts/:id/comments
