@@ -99,6 +99,36 @@ router.post('/', (req, res) => {
 // request missing text: cancel, return status 400, { errorMessage "error message" }
 // valid info: save new comment, return status 201, return new comment
 // error when saving: cancel, return status 500, { error: "error message" }
+router.post('/:id/comments', (req, res) => {
+    if (!req.body.text) {
+        res.status(400).json({ errorMessage: "Adding a comment requires text." });
+    } else {
+        console.log(`Post ID: ${req.body.post_id}`);
+        Posts.findById(req.body.post_id)
+        .then(post => {
+            if (!post) {
+                res.status(404).json({ errorMessage: "Post not found." });
+            } else {
+                Posts.insertComment(req.body)
+                .then(resp => {
+                    Posts.findCommentById(resp.id)
+                    .then(newComm => {
+                        res.status(201).json(newComm);
+                    })
+                    .catch(err => {
+                        res.status(500).json({ error: "Error retrieving new comment." });
+                    })
+                })
+                .catch(err => {
+                    res.status(500).json({ error: "Error saving new comment." });
+                })
+            }
+        })
+        .catch(err => {
+            res.status(500).json({ error: "Error retrieving post to add comment." });
+        })
+    }
+})
 
 // DELETE post with specified ID
 // /api/posts/:id
