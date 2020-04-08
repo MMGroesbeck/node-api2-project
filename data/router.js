@@ -131,10 +131,33 @@ router.post('/:id/comments', (req, res) => {
 })
 
 // DELETE post with specified ID
-// /api/posts/:id
+// /api/posts/:id (req.params.id)
 // ID not found: return status 404, { message: "404 message" }
 // error removing: cancel request, return status 500, { error: "error message" }
 // success: RETURN DELETED POST
+router.delete('/:id', (req, res) => {
+    Posts.findById(req.params.id)
+    .then(post => {
+        if(!post){
+            res.status(404).json({ message: "Post not found." });
+        } else {
+            Posts.remove(req.params.id)
+            .then(resp => {
+                if (resp > 0) {
+                    res.status(200).json(post);
+                } else {
+                    res.status(500).json({ error: "Post not deleted." });
+                }
+            })
+            .catch(er => {
+                res.status(500).json({ error: "Error deleting post." });
+            })
+        }
+    })
+    .catch(err => {
+        res.status(500).json({ error: "Error retrieving post." });
+    })
+})
 
 // PUT updates post with specified ID with data from request body
 // /api/posts/:id
