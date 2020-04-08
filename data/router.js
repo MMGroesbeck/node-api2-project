@@ -165,6 +165,39 @@ router.delete('/:id', (req, res) => {
 // request missing title or contents: cancel, status 400, { message: "error message" }
 // error when updating: status 500, { error: "error message" }
 // success: status 200, return newly updated post (not request)
+router.put('/:id', (req, res) => {
+    Posts.findById(req.params.id)
+    .then(post => {
+        if(!post){
+            res.status(404).json({ message: "Post not found." });
+        } else {
+            if(!req.body.title || !req.body.contents){
+                res.status(400).json({ message: "Please include title and contents." });
+            } else {
+                Posts.update(req.params.id, { title: req.body.title, contents: req.body.contents })
+                .then(count => {
+                    if(count > 0){
+                        Posts.findById(req.params.id)
+                        .then(nowPost => {
+                            res.status(200).json(nowPost);
+                        })
+                        .catch(e => {
+                            res.status(500).json({ error: "Unable to retrieve updated post." });
+                        })
+                    } else {
+                        res.status(500).json({ error: "Post not updated." });
+                    }
+                })
+                .catch(er => {
+                    res.status(500).json({ error: "Error updating post." });
+                })
+            }
+        }
+    })
+    .catch(err => {
+        res.status(500).json({ error: "Error finding post." });
+    })
+})
 
 
 
